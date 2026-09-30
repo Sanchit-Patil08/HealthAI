@@ -1,0 +1,284 @@
+{% extends "base.html" %}
+{% block title %}HealthAI — Your AI-Powered Health Companion{% endblock %}
+
+{% block content %}
+<!-- Public Navbar (no login) -->
+<nav class="navbar navbar-expand-lg navbar-ai">
+  <div class="container-fluid px-4">
+    <a class="navbar-brand d-flex align-items-center gap-1" href="/">
+      <i class="bi bi-heart-pulse-fill" style="color: var(--c-primary); font-size:1.1rem;"></i>
+      HealthAI<span class="brand-dot"></span>
+    </a>
+    <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navPub">
+      <i class="bi bi-list" style="font-size:1.3rem;"></i>
+    </button>
+    <div class="collapse navbar-collapse" id="navPub">
+      <ul class="navbar-nav mx-auto gap-1">
+        <li class="nav-item"><a class="nav-link" href="#features">Features</a></li>
+        <li class="nav-item"><a class="nav-link" href="#about">About</a></li>
+        <li class="nav-item"><a class="nav-link" href="#stats">Stats</a></li>
+      </ul>
+      <div class="d-flex gap-2">
+        <a href="{{ url_for('auth.login') }}" class="btn-ai btn-ghost-ai">Login</a>
+        <a href="{{ url_for('auth.signup') }}" class="btn-ai btn-primary-ai">Get Started →</a>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero-section">
+  <div class="container py-5 position-relative" style="z-index:1;">
+    <div class="row align-items-center g-5">
+      <div class="col-lg-6">
+        <div class="hero-tag">
+          <i class="bi bi-stars"></i> AI-Powered Healthcare
+        </div>
+        <h1 class="hero-title">
+          Your <span class="accent">Intelligent</span><br>
+          Health<span class="accent-2"> Companion</span>
+        </h1>
+        <p class="hero-desc">
+          HealthAI brings together symptom analysis, medication tracking, AI-driven insights, and emergency response — all in one clinically-focused platform designed to enhance your healthcare journey.
+        </p>
+        <div class="d-flex gap-3 flex-wrap">
+          <a href="{{ url_for('auth.signup') }}" class="btn-ai btn-primary-ai" style="font-size:1rem;padding:0.75rem 2rem;">
+            <i class="bi bi-rocket-takeoff-fill"></i> Get Started Free
+          </a>
+          <a href="#features" class="btn-ai btn-outline-ai" style="font-size:1rem;padding:0.75rem 1.5rem;">
+            <i class="bi bi-play-circle"></i> See Features
+          </a>
+        </div>
+        <div class="d-flex gap-4 mt-4">
+          <div>
+            <div style="font-family:var(--font-mono);font-size:1.4rem;font-weight:700;color:var(--c-primary);">10K+</div>
+            <div style="font-size:0.75rem;color:var(--c-text-3);">Health Analyses</div>
+          </div>
+          <div style="width:1px;background:var(--c-border);"></div>
+          <div>
+            <div style="font-family:var(--font-mono);font-size:1.4rem;font-weight:700;color:var(--c-accent);">98%</div>
+            <div style="font-size:0.75rem;color:var(--c-text-3);">User Satisfaction</div>
+          </div>
+          <div style="width:1px;background:var(--c-border);"></div>
+          <div>
+            <div style="font-family:var(--font-mono);font-size:1.4rem;font-weight:700;color:var(--c-success);">24/7</div>
+            <div style="font-size:0.75rem;color:var(--c-text-3);">AI Availability</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <!-- Hero visual: mock dashboard card -->
+        <div class="card-ai p-0" style="border-radius:var(--radius-xl);overflow:hidden;box-shadow:var(--shadow-lg);">
+          <div style="background:linear-gradient(135deg,var(--c-primary) 0%,#3B82F6 100%);padding:1.25rem 1.5rem;color:white;">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <div style="font-size:0.75rem;opacity:0.8;text-transform:uppercase;letter-spacing:0.05em;">Health Dashboard</div>
+                <div style="font-size:1.1rem;font-weight:600;">Good Morning, Alex</div>
+              </div>
+              <div style="background:rgba(255,255,255,0.2);padding:8px 16px;border-radius:var(--radius-pill);font-family:var(--font-mono);font-size:0.9rem;font-weight:700;">
+                Score: 82
+              </div>
+            </div>
+          </div>
+          <div style="padding:1.5rem;">
+            <div class="grid-2 mb-3">
+              <div class="stat-tile">
+                <div class="stat-value" style="font-size:1.3rem;">3/3</div>
+                <div class="stat-label">Meds Today</div>
+              </div>
+              <div class="stat-tile">
+                <div class="stat-value" style="font-size:1.3rem;color:var(--c-accent);">92%</div>
+                <div class="stat-label">Adherence</div>
+              </div>
+            </div>
+            <div class="alert-ai alert-ai-success mb-3" style="padding:0.75rem 1rem;">
+              <i class="bi bi-check-circle-fill alert-icon" style="color:var(--c-success);"></i>
+              <div><strong>All medications taken today!</strong> Great consistency this week.</div>
+            </div>
+            <div class="alert-ai alert-ai-info" style="padding:0.75rem 1rem;">
+              <i class="bi bi-robot alert-icon" style="color:var(--c-info);"></i>
+              <div><strong>AI Insight:</strong> Your BP has been stable for 7 days. Keep it up!</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Features -->
+<section id="features" style="padding:5rem 0; background:var(--c-surface);">
+  <div class="container">
+    <div class="text-center mb-5">
+      <div class="hero-tag mx-auto mb-3" style="width:fit-content;">
+        <i class="bi bi-grid-3x3-gap-fill"></i> Platform Features
+      </div>
+      <h2 class="hero-title" style="font-size:2.5rem;">Everything you need for <br><span class="accent">smarter healthcare</span></h2>
+      <p style="color:var(--c-text-3);max-width:560px;margin:0.75rem auto 0;font-size:1rem;">
+        From real-time symptom analysis to emergency response — HealthAI covers your entire health journey.
+      </p>
+    </div>
+
+    <div class="grid-2" style="gap:1.5rem;max-width:960px;margin:0 auto;">
+      <a href="{{ url_for('auth.signup') }}" class="feature-card-landing" style="--card-accent: var(--c-primary); text-decoration:none;color:inherit;">
+        <div class="feature-icon blue"><i class="bi bi-stethoscope"></i></div>
+        <h4 style="font-size:1.05rem;margin-bottom:0.5rem;">Health Check Tools</h4>
+        <p style="font-size:0.875rem;color:var(--c-text-3);line-height:1.6;margin:0;">
+          AI symptom checker & medical report analyzer. Get instant insights about your health with urgency triage and condition probability scoring.
+        </p>
+        <div class="mt-3 d-flex gap-2 flex-wrap">
+          <span class="badge-ai badge-primary">Symptom Checker</span>
+          <span class="badge-ai badge-info">Report Analyzer</span>
+        </div>
+      </a>
+
+      <a href="{{ url_for('auth.signup') }}" class="feature-card-landing" style="--card-accent: var(--c-accent); text-decoration:none;color:inherit;">
+        <div class="feature-icon teal"><i class="bi bi-capsule"></i></div>
+        <h4 style="font-size:1.05rem;margin-bottom:0.5rem;">Smart Medication Management</h4>
+        <p style="font-size:0.875rem;color:var(--c-text-3);line-height:1.6;margin:0;">
+          Track medications, log adherence, and get AI-driven pattern detection for missed doses and habit analysis.
+        </p>
+        <div class="mt-3 d-flex gap-2 flex-wrap">
+          <span class="badge-ai badge-success">Adherence Tracking</span>
+          <span class="badge-ai badge-primary">Behavior Insights</span>
+        </div>
+      </a>
+
+      <a href="{{ url_for('auth.signup') }}" class="feature-card-landing" style="--card-accent: #EA580C; text-decoration:none;color:inherit;">
+        <div class="feature-icon orange"><i class="bi bi-lightning-fill"></i></div>
+        <h4 style="font-size:1.05rem;margin-bottom:0.5rem;">Emergency & Quick Actions</h4>
+        <p style="font-size:0.875rem;color:var(--c-text-3);line-height:1.6;margin:0;">
+          One-tap ambulance call, doctor booking with specialty matching, and instant health summary sharing with caregivers.
+        </p>
+        <div class="mt-3 d-flex gap-2 flex-wrap">
+          <span class="badge-ai badge-danger">Emergency SOS</span>
+          <span class="badge-ai badge-warning">Doctor Booking</span>
+        </div>
+      </a>
+
+      <a href="{{ url_for('auth.signup') }}" class="feature-card-landing" style="--card-accent: var(--c-success); text-decoration:none;color:inherit;">
+        <div class="feature-icon green"><i class="bi bi-graph-up-arrow"></i></div>
+        <h4 style="font-size:1.05rem;margin-bottom:0.5rem;">Personal Health Insights</h4>
+        <p style="font-size:0.875rem;color:var(--c-text-3);line-height:1.6;margin:0;">
+          AI-driven health score, behavioral pattern detection, memory-based recommendations, and historical health timeline.
+        </p>
+        <div class="mt-3 d-flex gap-2 flex-wrap">
+          <span class="badge-ai badge-success">Health Score</span>
+          <span class="badge-ai badge-neutral">AI Memory</span>
+        </div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- Stats -->
+<section id="stats" style="padding:5rem 0;background:var(--c-bg);">
+  <div class="container">
+    <div class="row text-center g-4">
+      <div class="col-md-3 col-6">
+        <div class="stat-hero">
+          <div class="big-num">10K+</div>
+          <div style="font-size:0.875rem;color:var(--c-text-3);margin-top:0.25rem;">Symptom Analyses</div>
+        </div>
+      </div>
+      <div class="col-md-3 col-6">
+        <div class="stat-hero">
+          <div class="big-num" style="color:var(--c-accent);">50K+</div>
+          <div style="font-size:0.875rem;color:var(--c-text-3);margin-top:0.25rem;">Medications Tracked</div>
+        </div>
+      </div>
+      <div class="col-md-3 col-6">
+        <div class="stat-hero">
+          <div class="big-num" style="color:var(--c-success);">99.9%</div>
+          <div style="font-size:0.875rem;color:var(--c-text-3);margin-top:0.25rem;">Platform Uptime</div>
+        </div>
+      </div>
+      <div class="col-md-3 col-6">
+        <div class="stat-hero">
+          <div class="big-num" style="color:var(--c-warning);">3min</div>
+          <div style="font-size:0.875rem;color:var(--c-text-3);margin-top:0.25rem;">Avg. Response Time</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- About -->
+<section id="about" style="padding:5rem 0;background:var(--c-surface);">
+  <div class="container">
+    <div class="row align-items-center g-5">
+      <div class="col-lg-5">
+        <div class="hero-tag mb-3" style="width:fit-content;">
+          <i class="bi bi-info-circle"></i> About HealthAI
+        </div>
+        <h2 style="font-family:var(--font-display);font-size:2rem;font-weight:700;line-height:1.2;margin-bottom:1rem;">
+          Bridging the gap between <span style="color:var(--c-primary);">patients & care</span>
+        </h2>
+        <p style="color:var(--c-text-3);line-height:1.7;margin-bottom:1.25rem;">
+          HealthAI was built for the hackathon challenge of improving healthcare delivery through AI. We believe every patient deserves real-time, intelligent, and personalized health guidance — not just at the clinic, but every day.
+        </p>
+        <p style="color:var(--c-text-3);line-height:1.7;">
+          Our AI engine processes your health data, identifies patterns, alerts you to potential risks, and empowers you to make informed decisions — all while keeping your data private and secure.
+        </p>
+      </div>
+      <div class="col-lg-7">
+        <div class="grid-2" style="gap:1rem;">
+          <div class="stat-tile" style="border-left:4px solid var(--c-primary);">
+            <i class="bi bi-shield-check" style="color:var(--c-primary);font-size:1.5rem;margin-bottom:0.5rem;display:block;"></i>
+            <div style="font-weight:600;margin-bottom:0.25rem;">Privacy First</div>
+            <div style="font-size:0.82rem;color:var(--c-text-3);">All data stored locally in SQLite. No third-party sharing.</div>
+          </div>
+          <div class="stat-tile" style="border-left:4px solid var(--c-accent);">
+            <i class="bi bi-cpu" style="color:var(--c-accent);font-size:1.5rem;margin-bottom:0.5rem;display:block;"></i>
+            <div style="font-weight:600;margin-bottom:0.25rem;">AI-Powered</div>
+            <div style="font-size:0.82rem;color:var(--c-text-3);">Rule-based + ML decision engine for health analysis.</div>
+          </div>
+          <div class="stat-tile" style="border-left:4px solid var(--c-success);">
+            <i class="bi bi-phone" style="color:var(--c-success);font-size:1.5rem;margin-bottom:0.5rem;display:block;"></i>
+            <div style="font-weight:600;margin-bottom:0.25rem;">Mobile Ready</div>
+            <div style="font-size:0.82rem;color:var(--c-text-3);">Fully responsive design for any device.</div>
+          </div>
+          <div class="stat-tile" style="border-left:4px solid var(--c-warning);">
+            <i class="bi bi-clock-history" style="color:var(--c-warning);font-size:1.5rem;margin-bottom:0.5rem;display:block;"></i>
+            <div style="font-weight:600;margin-bottom:0.25rem;">Historical Context</div>
+            <div style="font-size:0.82rem;color:var(--c-text-3);">AI memory recalls past symptoms for smarter insights.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section style="padding:5rem 0;background:linear-gradient(135deg,var(--c-primary) 0%,#3B82F6 100%);color:white;text-align:center;">
+  <div class="container">
+    <h2 style="font-family:var(--font-display);font-size:2.2rem;font-weight:700;margin-bottom:1rem;">
+      Start your health journey today
+    </h2>
+    <p style="opacity:0.85;font-size:1rem;max-width:480px;margin:0 auto 2rem;">
+      Join thousands of users using AI to take control of their health — for free.
+    </p>
+    <a href="{{ url_for('auth.signup') }}" class="btn-ai" style="background:white;color:var(--c-primary);font-size:1rem;padding:0.875rem 2.5rem;font-weight:700;border-radius:var(--radius-sm);">
+      Create Free Account →
+    </a>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer style="background:var(--c-text);color:rgba(255,255,255,0.6);padding:2.5rem 0;text-align:center;">
+  <div class="container">
+    <div style="font-family:var(--font-display);color:white;font-size:1.2rem;margin-bottom:0.5rem;">
+      HealthAI
+    </div>
+    <p style="font-size:0.8rem;margin-bottom:1rem;">
+      AI-Driven Health Platform · Built for Healthcare Hackathon 2025
+    </p>
+    <div style="display:flex;justify-content:center;gap:1.5rem;flex-wrap:wrap;font-size:0.8rem;">
+      <a href="#" style="color:rgba(255,255,255,0.5);">Privacy Policy</a>
+      <a href="#" style="color:rgba(255,255,255,0.5);">Terms of Service</a>
+      <a href="#" style="color:rgba(255,255,255,0.5);">Contact</a>
+      <span>© 2025 HealthAI. All rights reserved.</span>
+    </div>
+  </div>
+</footer>
+{% endblock %}

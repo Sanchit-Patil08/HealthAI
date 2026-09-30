@@ -1,0 +1,459 @@
+{% extends "base.html" %}
+{% block title %}Health Check{% endblock %}
+
+{% block content %}
+<div class="page-wrap">
+  <div class="page-header">
+    <h1 class="page-title"><i class="bi bi-stethoscope" style="color:var(--c-primary);"></i> Health Check Tools</h1>
+    <p>AI-powered symptom analysis and medical report interpretation.</p>
+  </div>
+
+  <!-- Tab switcher -->
+  <div class="tabs-ai mb-4" style="max-width:420px;">
+    <button class="tab-btn active" onclick="switchTab('symptoms', this)">
+      <i class="bi bi-activity"></i> Symptom Checker
+    </button>
+    <button class="tab-btn" onclick="switchTab('report', this)" id="reportTabBtn">
+      <i class="bi bi-file-earmark-medical"></i> Report Analyzer
+    </button>
+  </div>
+
+  <div class="row g-4">
+    <!-- Left: Input Panel -->
+    <div class="col-lg-6">
+
+      <!-- Symptom Checker -->
+      <div id="tab-symptoms">
+        <div class="card-ai">
+          <div class="card-header-ai">
+            <div class="section-title"><i class="bi bi-activity" style="color:var(--c-primary);"></i> Symptom Checker</div>
+            <span class="badge-ai badge-info">AI Analysis</span>
+          </div>
+          <div class="card-body-ai">
+            <div class="form-ai">
+              <div class="field-group">
+  <label class="field-label">Who are these symptoms for? *</label>
+  <div class="d-flex gap-4 mt-2">
+    <label class="d-flex align-items-center gap-2" style="cursor:pointer;">
+      <input type="radio" name="symptomSubject" value="me" checked>
+      <span>Me</span>
+    </label>
+
+    <label class="d-flex align-items-center gap-2" style="cursor:pointer;">
+      <input type="radio" name="symptomSubject" value="other">
+      <span>Someone else</span>
+    </label>
+  </div>
+  <div class="text-muted-ai mt-1" style="font-size:0.75rem;">
+    Symptoms marked as "Someone else" won't be added to your health history.
+  </div>
+</div>
+              <div class="field-group">
+                <label class="field-label">Describe Your Symptoms *</label>
+                <textarea id="symptomsInput" class="textarea-ai" rows="4"
+                  placeholder="e.g. I have a fever, headache, and sore throat for the past 2 days..."></textarea>
+              </div>
+              <div class="row g-3">
+                <div class="col-6">
+                  <div class="field-group">
+                    <label class="field-label">Duration</label>
+                    <select id="durationInput" class="select-ai">
+                      <option value="Few hours">Few hours</option>
+                      <option value="1-2 days" selected>1-2 days</option>
+                      <option value="3-5 days">3-5 days</option>
+                      <option value="1 week">1 week</option>
+                      <option value="More than 1 week">More than 1 week</option>
+                      <option value="Chronic">Chronic</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div class="field-group">
+                    <label class="field-label">Severity: <span id="severityVal" class="font-mono" style="color:var(--c-primary);">5</span>/10</label>
+                    <input type="range" id="severityInput" class="slider-ai mt-2" min="1" max="10" value="5"
+                      oninput="document.getElementById('severityVal').textContent=this.value">
+                    <div class="flex-between mt-1">
+                      <span style="font-size:0.7rem;color:var(--c-text-4);">Mild</span>
+                      <span style="font-size:0.7rem;color:var(--c-text-4);">Severe</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Quick symptom chips -->
+              <div>
+                <div class="field-label mb-2">Quick Add</div>
+                <div style="display:flex;flex-wrap:wrap;gap:0.5rem;">
+                  {% for sym in ['Fever','Headache','Cough','Nausea','Fatigue','Chest Pain','Dizziness','Shortness of Breath','Sore Throat','Stomach Pain'] %}
+                  <button onclick="addSymptom('{{ sym }}')" class="btn-ai btn-ghost-ai py-1 px-2" style="font-size:0.75rem;">
+                    + {{ sym }}
+                  </button>
+                  {% endfor %}
+                </div>
+              </div>
+
+              <button onclick="analyzeSymptoms()" class="btn-ai btn-primary-ai w-100 justify-content-center" style="font-size:0.95rem;padding:0.7rem;">
+                <i class="bi bi-cpu"></i> Analyze with AI
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Report Analyzer -->
+      <div id="tab-report" class="hidden">
+        <div class="card-ai">
+          <div class="card-header-ai">
+            <div class="section-title"><i class="bi bi-file-earmark-medical" style="color:var(--c-primary);"></i> Report Analyzer</div>
+            <span class="badge-ai badge-info">AI Analysis</span>
+          </div>
+          <div class="card-body-ai">
+            <div class="form-ai">
+              <div class="field-group">
+                <label class="field-label">Report Type</label>
+                <select id="reportType" class="select-ai">
+                  <option>Blood Test</option>
+                  <option>Urine Test</option>
+                  <option>X-Ray / Imaging</option>
+                  <option>ECG</option>
+                  <option>Lipid Profile</option>
+                  <option>Thyroid Panel</option>
+                  <option>General Checkup</option>
+                </select>
+              </div>
+              <div class="field-group">
+                <label class="field-label">Upload Report (PDF / Image)</label>
+                <div id="dropZone" onclick="document.getElementById('reportFile').click()"
+                  style="border:2px dashed var(--c-border);border-radius:var(--radius-sm);padding:2.5rem;text-align:center;cursor:pointer;transition:all var(--transition);background:var(--c-surface-2);"
+                  ondragover="this.style.borderColor='var(--c-primary)'"
+                  ondragleave="this.style.borderColor='var(--c-border)'">
+                  <i class="bi bi-cloud-arrow-up" style="font-size:2rem;color:var(--c-primary);display:block;margin-bottom:0.5rem;"></i>
+                  <div style="font-weight:600;font-size:0.875rem;" id="dropText">Click or drag to upload</div>
+                  <div class="text-muted-ai" style="font-size:0.78rem;">PDF, JPG, PNG up to 16MB</div>
+                </div>
+                <input type="file" id="reportFile" accept=".pdf,.jpg,.jpeg,.png" hidden onchange="fileSelected(this)">
+              </div>
+              <button onclick="analyzeReport()" class="btn-ai btn-primary-ai w-100 justify-content-center" style="font-size:0.95rem;padding:0.7rem;">
+                <i class="bi bi-cpu"></i> Analyze Report
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Results Panel -->
+    <div class="col-lg-6">
+      <div id="loadingPanel" class="hidden" style="text-align:center;padding:4rem 2rem;">
+        <div class="spinner-ai mx-auto mb-3" style="width:40px;height:40px;border-width:4px;"></div>
+        <div style="font-weight:600;color:var(--c-text-2);">AI is analyzing...</div>
+        <div class="text-muted-ai mt-1" style="font-size:0.82rem;">This usually takes a few seconds</div>
+      </div>
+
+      <div id="resultsPanel" class="hidden">
+        <!-- Results rendered by JS -->
+      </div>
+
+      <!-- History -->
+      <div class="card-ai mt-4" id="historyCard">
+        <div class="card-header-ai">
+          <div class="section-title"><i class="bi bi-clock-history" style="color:var(--c-primary);"></i> Analysis History</div>
+        </div>
+        <div class="card-body-ai">
+          {% if symptom_history %}
+          <div class="timeline">
+            {% for s in symptom_history %}
+            <div class="timeline-item">
+              <div class="timeline-dot symptom"></div>
+              <div class="flex-between gap-2">
+                <div>
+                  <div class="timeline-date">{{ s.logged_at.strftime('%b %d, %Y · %I:%M %p') }}</div>
+                  <div class="timeline-content">{{ s.symptoms[:80] }}{% if s.symptoms|length > 80 %}...{% endif %}</div>
+                </div>
+                {% if s.urgency_level %}
+                <span class="badge-ai badge-{% if s.urgency_level == 'emergency' %}danger{% elif s.urgency_level == 'high' %}warning{% elif s.urgency_level == 'medium' %}warning{% else %}success{% endif %}" style="flex-shrink:0;">
+                  {{ s.urgency_level }}
+                </span>
+                {% endif %}
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="text-center py-4 text-muted-ai">
+            <i class="bi bi-clipboard-pulse" style="font-size:2rem;"></i>
+            <p class="mt-2">No analyses yet. Run your first check!</p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function switchTab(tab, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-symptoms').classList.toggle('hidden', tab !== 'symptoms');
+  document.getElementById('tab-report').classList.toggle('hidden', tab !== 'report');
+}
+
+// Check for #report anchor
+if (window.location.hash === '#report') {
+  switchTab('report', document.getElementById('reportTabBtn'));
+}
+
+function addSymptom(sym) {
+  const el = document.getElementById('symptomsInput');
+  el.value = el.value ? el.value + ', ' + sym : sym;
+}
+
+function fileSelected(input) {
+  const name = input.files[0]?.name;
+  if (name) {
+    document.getElementById('dropText').textContent = '✓ ' + name;
+    document.getElementById('dropZone').style.borderColor = 'var(--c-success)';
+  }
+}
+
+async function analyzeSymptoms() {
+  const symptoms = document.getElementById('symptomsInput').value.trim();
+  if (!symptoms) { showToast('Please describe your symptoms', 'danger'); return; }
+  
+  const subject = document.querySelector(
+    'input[name="symptomSubject"]:checked'
+  ).value;
+
+  showLoading(true);
+  try {
+    const resp = await fetch('/api/analyze-symptoms', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        symptoms,
+        duration: document.getElementById('durationInput').value,
+        severity: document.getElementById('severityInput').value
+      })
+    });
+    const data = await resp.json();
+    showLoading(false);
+    if (data.success) renderSymptomResults(data.result);
+    else showToast('Analysis failed', 'danger');
+  } catch(e) {
+    showLoading(false);
+    console.error('Symptom Analysis Error:', e);
+    showToast('Analysis error — check console', 'danger');
+  }
+}
+
+async function analyzeReport() {
+  const file = document.getElementById('reportFile').files[0];
+  if (!file) { showToast('Please upload a report file', 'danger'); return; }
+  
+  showLoading(true);
+  const form = new FormData();
+  form.append('report', file);
+  form.append('report_type', document.getElementById('reportType').value);
+  
+  try {
+    const resp = await fetch('/api/analyze-report', { method: 'POST', body: form });
+    const data = await resp.json();
+    showLoading(false);
+    if (data.success) renderReportResults(data.result);
+    else showToast('Analysis failed', 'danger');
+  } catch(e) {
+    showLoading(false);
+    showToast('Network error', 'danger');
+  }
+}
+
+function showLoading(show) {
+  document.getElementById('loadingPanel').classList.toggle('hidden', !show);
+  document.getElementById('resultsPanel').classList.add('hidden');
+  document.getElementById('historyCard').classList.toggle('hidden', show);
+}
+
+function renderSymptomResults(r) {
+  console.log("Symptom result received:", r);
+  console.log("Conditions:", r.conditions);
+  console.log("Recommendations:", r.recommendations);
+
+  const urgencyColors = {emergency:'danger', high:'warning', medium:'warning', low:'success'};
+  const urgencyBg = {emergency:'var(--c-danger-light)', high:'#FFF7ED', medium:'var(--c-warning-light)', low:'var(--c-success-light)'};
+  const uc = urgencyColors[r.urgency] || 'neutral';
+  
+  let condHTML = r.conditions.map(c => `
+    <div class="condition-item">
+      <div>
+        <div style="font-weight:600;font-size:0.875rem;">${c.name}</div>
+        <div class="text-muted-ai">${c.type === 'emergency' ? '🚨 Requires immediate attention' : 'Consult a physician'}</div>
+      </div>
+      <span class="badge-ai badge-${c.type==='emergency'?'danger':c.type==='urgent'?'warning':'neutral'}">${c.probability}</span>
+    </div>
+  `).join('');
+
+  let recHTML = r.recommendations.map(rec => `
+    <div style="display:flex;gap:8px;padding:0.5rem 0;border-bottom:1px solid var(--c-border-soft);font-size:0.875rem;">
+      <i class="bi bi-check2-circle" style="color:var(--c-success);flex-shrink:0;margin-top:2px;"></i>
+      <span>${rec}</span>
+    </div>
+  `).join('');
+
+  document.getElementById('resultsPanel').innerHTML = `
+    <div class="result-panel">
+      <div class="flex-between mb-3">
+        <h5 style="font-weight:700;font-size:1rem;margin:0;">Analysis Result</h5>
+        <span class="badge-ai badge-${uc}" style="font-size:0.8rem;">
+          ${r.urgency.toUpperCase()} URGENCY
+        </span>
+      </div>
+
+      ${r.urgency === 'emergency' ? `
+      <div class="alert-ai alert-ai-danger mb-3">
+        <i class="bi bi-exclamation-triangle-fill alert-icon"></i>
+        <div><strong>Emergency:</strong> Please call 112 or go to the nearest ER immediately.</div>
+      </div>
+      ` : ''}
+
+      <div style="background:var(--c-surface-2);border-radius:var(--radius-sm);padding:0.875rem;font-size:0.82rem;color:var(--c-text-3);margin-bottom:1.25rem;line-height:1.5;">
+        ${r.summary}
+      </div>
+
+      <div class="section-title mb-2">Possible Conditions</div>
+      <div style="margin-bottom:1.25rem;">${condHTML}</div>
+
+      <div class="section-title mb-2">Recommendations</div>
+      <div>${recHTML}</div>
+
+      <div style="margin-top:1.25rem;padding:0.75rem;background:var(--c-warning-light);border-radius:var(--radius-sm);font-size:0.75rem;color:var(--c-warning);">
+        <i class="bi bi-info-circle"></i> ${r.disclaimer}
+      </div>
+
+      ${r.urgency !== 'emergency' ? `
+      <a href="/emergency" class="btn-ai btn-outline-ai w-100 justify-content-center mt-3">
+        <i class="bi bi-calendar-plus"></i> Book a Doctor Appointment
+      </a>
+      ` : `
+      <a href="/emergency" class="btn-ai btn-danger-ai w-100 justify-content-center mt-3 pulsing">
+        <i class="bi bi-telephone-fill"></i> Go to Emergency Actions
+      </a>
+      `}
+    </div>
+  `;
+  document.getElementById('resultsPanel').classList.remove('hidden');
+}
+
+function renderReportResults(r) {
+  const statusColors = {
+    Normal: 'success',
+    High: 'danger',
+    Low: 'warning'
+  };
+
+  let metricsHTML = r.key_metrics.map(m => `
+    <div class="condition-item">
+      <div>
+        <div style="font-weight:600;font-size:0.875rem;">${m.parameter}</div>
+        <div class="text-muted-ai">
+          Normal range: ${m.reference_low} - ${m.reference_high} ${m.unit}
+        </div>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <span class="font-mono" style="font-size:0.875rem;">
+          ${m.value} ${m.unit}
+        </span>
+        <span class="badge-ai badge-${statusColors[m.status] || 'neutral'}">
+          ${m.status}
+        </span>
+      </div>
+    </div>
+  `).join('');
+
+  let flagsHTML = r.flags.map(f => `
+    <div class="alert-ai alert-ai-warning" style="padding:0.625rem 0.875rem;font-size:0.82rem;">
+      <i class="bi bi-flag-fill alert-icon" style="color:var(--c-warning);"></i>
+      <strong>${f.parameter}:</strong>
+      ${f.value} ${f.unit} (${f.status})
+      — Reference range: ${f.reference_low} - ${f.reference_high} ${f.unit}
+    </div>
+  `).join('');
+
+  let interpretationsHTML = r.key_metrics
+    .filter(m => m.status === 'High' || m.status === 'Low')
+    .map(m => `
+      <div style="padding:0.875rem;background:var(--c-surface-2);border-radius:var(--radius-sm);margin-bottom:0.75rem;">
+        <div style="font-weight:600;font-size:0.875rem;margin-bottom:0.35rem;">
+          ${m.parameter}
+        </div>
+
+        <div class="text-muted-ai" style="font-size:0.82rem;line-height:1.5;margin-bottom:0.65rem;">
+          ${m.ai_explanation || 'This result is outside the reference range stated in the report and should be interpreted in context.'}
+        </div>
+
+        ${m.recommendations && m.recommendations.length ? `
+          <div style="font-weight:600;font-size:0.8rem;margin-bottom:0.35rem;">
+            Suggested Follow-up
+          </div>
+          <ul style="margin:0;padding-left:1.1rem;font-size:0.8rem;line-height:1.5;">
+            ${m.recommendations.map(rec => `<li>${rec}</li>`).join('')}
+          </ul>
+        ` : ''}
+      </div>
+    `).join('');
+
+  let overallRecommendationsHTML = r.ai_recommendations && r.ai_recommendations.length ? `
+    <div class="section-title mb-2">Overall Recommendations</div>
+    <div style="padding:0.875rem;background:var(--c-primary-soft);border-radius:var(--radius-sm);margin-bottom:1.25rem;">
+      <ul style="margin:0;padding-left:1.1rem;font-size:0.82rem;line-height:1.6;">
+        ${r.ai_recommendations.map(rec => `<li>${rec}</li>`).join('')}
+      </ul>
+    </div>
+  ` : '';
+
+  document.getElementById('resultsPanel').innerHTML = `
+    <div class="result-panel">
+      <div class="flex-between mb-3">
+        <h5 style="font-weight:700;font-size:1rem;margin:0;">Report Analysis</h5>
+        <span class="badge-ai badge-success">Complete</span>
+      </div>
+
+      <div style="background:var(--c-surface-2);border-radius:var(--radius-sm);padding:0.875rem;font-size:0.82rem;color:var(--c-text-3);margin-bottom:1.25rem;line-height:1.5;">
+        ${r.summary}
+      </div>
+
+      <div class="section-title mb-2">Key Metrics</div>
+      <div style="margin-bottom:1.25rem;">${metricsHTML}</div>
+
+      ${r.flags.length ? `
+        <div class="section-title mb-2">Flags & Alerts</div>
+        <div style="display:flex;flex-direction:column;gap:0.5rem;margin-bottom:1.25rem;">
+          ${flagsHTML}
+        </div>
+      ` : ''}
+
+      ${interpretationsHTML ? `
+        <div class="section-title mb-2">What This Means</div>
+        <div style="margin-bottom:1.25rem;">
+          ${interpretationsHTML}
+        </div>
+      ` : ''}
+
+      ${overallRecommendationsHTML}
+
+      <div style="padding:0.875rem;background:var(--c-primary-soft);border-radius:var(--radius-sm);font-size:0.875rem;">
+        <div style="font-weight:600;margin-bottom:0.25rem;">
+          <i class="bi bi-info-circle" style="color:var(--c-primary);"></i>
+          Report Summary
+        </div>
+        Results are compared with the reference ranges stated in the uploaded report. This analysis is informational and does not provide a medical diagnosis.
+      </div>
+    </div>
+  `;
+
+  document.getElementById('resultsPanel').classList.remove('hidden');
+}
+</script>
+{% endblock %}

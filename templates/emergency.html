@@ -1,0 +1,343 @@
+{% extends "base.html" %}
+{% block title %}Emergency & Quick Actions{% endblock %}
+
+{% block content %}
+<div class="page-wrap">
+  <div class="page-header">
+    <h1 class="page-title"><i class="bi bi-lightning-fill" style="color:var(--c-danger);"></i> Emergency & Quick Actions</h1>
+    <p>Instant emergency assistance, doctor booking, and health sharing — all in one place.</p>
+  </div>
+
+  <div class="row g-4">
+    <!-- Left Column -->
+    <div class="col-lg-6">
+
+      <!-- Emergency SOS -->
+      <div class="card-ai mb-4" style="border:2px solid var(--c-danger-light);">
+        <div class="card-header-ai" style="background:var(--c-danger-light);">
+          <div class="section-title" style="color:var(--c-danger);">
+            <i class="bi bi-exclamation-triangle-fill"></i> Emergency SOS
+          </div>
+          <span class="badge-ai badge-danger">Critical</span>
+        </div>
+        <div class="card-body-ai">
+          <p style="font-size:0.875rem;color:var(--c-text-3);margin-bottom:1.25rem;">
+            In a life-threatening emergency, call emergency services immediately. Use the buttons below to get immediate help.
+          </p>
+          <div style="display:flex;flex-direction:column;gap:0.875rem;">
+            <a href="tel:112">
+              <button class="btn-emergency pulsing">
+                <i class="bi bi-telephone-fill" style="font-size:1.3rem;"></i>
+                Call Ambulance — 112
+              </button>
+            </a>
+            <a href="tel:108">
+              <button class="btn-emergency" style="background:var(--c-warning);box-shadow:0 4px 16px rgba(217,119,6,0.3);">
+                <i class="bi bi-hospital-fill" style="font-size:1.3rem;"></i>
+                AIIMS Emergency — 108
+              </button>
+            </a>
+          </div>
+
+          <!-- User Info Card for Emergency -->
+          <div class="mt-4" style="background:var(--c-surface-2);border-radius:var(--radius-sm);padding:1rem;">
+            <div class="flex-between mb-2">
+              <div style="font-weight:600;font-size:0.875rem;"><i class="bi bi-person-vcard" style="color:var(--c-primary);"></i> Your Emergency Info</div>
+              <a href="{{ url_for('profile.profile') }}" style="font-size:0.78rem;">Edit →</a>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;font-size:0.82rem;">
+              <div>
+                <span class="text-muted-ai">Name:</span>
+                <span class="fw-600 ms-1">{{ current_user.name }}</span>
+              </div>
+              <div>
+                <span class="text-muted-ai">Blood Group:</span>
+                <span class="fw-600 ms-1">{{ current_user.blood_group or '—' }}</span>
+              </div>
+              <div>
+                <span class="text-muted-ai">Age:</span>
+                <span class="fw-600 ms-1">{{ current_user.age or '—' }}</span>
+              </div>
+              <div>
+                <span class="text-muted-ai">Allergies:</span>
+                <span class="fw-600 ms-1">{{ (current_user.allergies[:20] + '...') if current_user.allergies and current_user.allergies|length > 20 else (current_user.allergies or '—') }}</span>
+              </div>
+            </div>
+            {% if current_user.emergency_contact %}
+            <div class="mt-2" style="padding-top:0.75rem;border-top:1px solid var(--c-border-soft);">
+              <span class="text-muted-ai" style="font-size:0.8rem;">Emergency Contact:</span>
+              <span class="fw-600 ms-1" style="font-size:0.82rem;">{{ current_user.emergency_contact }}</span>
+              {% if current_user.emergency_phone %}
+              <a href="tel:{{ current_user.emergency_phone }}" class="btn-ai btn-ghost-ai py-1 px-2 ms-2" style="font-size:0.72rem;">
+                <i class="bi bi-telephone"></i> Call
+              </a>
+              {% endif %}
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Share Health Summary -->
+      <div class="card-ai mb-4">
+        <div class="card-header-ai">
+          <div class="section-title"><i class="bi bi-share" style="color:var(--c-primary);"></i> Share Health Summary</div>
+        </div>
+        <div class="card-body-ai">
+          <p style="font-size:0.875rem;color:var(--c-text-3);margin-bottom:1.25rem;">
+            Instantly share your complete health profile — medications, allergies, blood group, and recent symptoms — with a doctor or caregiver.
+          </p>
+          <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+            <button onclick="viewSummary()" class="btn-ai btn-outline-ai">
+              <i class="bi bi-eye"></i> View Summary
+            </button>
+            <button onclick="copyShareLink()" class="btn-ai btn-ghost-ai">
+              <i class="bi bi-clipboard2-pulse"></i> Copy to Clipboard
+            </button>
+          </div>
+
+          <!-- Summary Preview (hidden by default) -->
+          <div id="summaryPreview" class="hidden mt-3">
+            <div style="background:var(--c-surface-2);border:1px solid var(--c-border);border-radius:var(--radius-sm);padding:1.125rem;font-size:0.82rem;" id="summaryContent">
+              <div class="text-center py-2"><div class="spinner-ai mx-auto"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column -->
+    <div class="col-lg-6">
+
+      <!-- Book Appointment -->
+      <div class="card-ai mb-4">
+        <div class="card-header-ai">
+          <div class="section-title"><i class="bi bi-calendar-plus" style="color:var(--c-primary);"></i> Book Doctor Appointment</div>
+        </div>
+        <div class="card-body-ai">
+          <div class="">
+            <div class="field-group">
+              <label class="field-label">Medical Specialty *</label>
+              <select id="apptSpecialty" class="select-ai" onchange="aiRecommend()">
+                <option value="">— Select Specialty —</option>
+                <option>General Physician</option>
+                <option>Cardiologist</option>
+                <option>Dermatologist</option>
+                <option>Endocrinologist</option>
+                <option>Gastroenterologist</option>
+                <option>Neurologist</option>
+                <option>Oncologist</option>
+                <option>Ophthalmologist</option>
+                <option>Orthopedic Surgeon</option>
+                <option>Pediatrician</option>
+                <option>Psychiatrist</option>
+                <option>Pulmonologist</option>
+                <option>Urologist</option>
+              </select>
+            </div>
+
+            <!-- AI Recommendation -->
+            <div id="aiSpecRec" class="hidden">
+              <div class="alert-ai alert-ai-info" style="padding:0.75rem;font-size:0.82rem;">
+                <i class="bi bi-robot alert-icon" style="color:var(--c-info);"></i>
+                <div id="aiSpecText"></div>
+              </div>
+            </div>
+
+            <div class="field-group">
+              <label class="field-label">Doctor Name <span style="color:var(--c-text-4);font-size:0.7rem;">(optional)</span></label>
+              <input type="text" id="apptDoctor" class="input-ai" placeholder="Dr. Sharma / Leave blank for AI match">
+            </div>
+            <div class="field-group">
+              <label class="field-label">Location / Hospital</label>
+              <input type="text" id="apptLocation" class="input-ai" placeholder="City or Hospital name">
+            </div>
+            <div class="row g-3">
+              <div class="col-12">
+                <div class="field-group">
+                  <label class="field-label">Preferred Date & Time *</label>
+                  <input type="datetime-local" id="apptDate" class="input-ai">
+                </div>
+              </div>
+            </div>
+            <div class="field-group">
+              <label class="field-label">Notes / Reason for Visit</label>
+              <textarea id="apptNotes" class="textarea-ai" rows="2" placeholder="Describe what you'd like to consult about..."></textarea>
+            </div>
+            <button onclick="bookAppointment()" class="btn-ai btn-primary-ai w-100 justify-content-center" style="font-size:0.95rem;padding:0.7rem;">
+              <i class="bi bi-calendar-check-fill"></i> Book Appointment
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Appointments List -->
+      <div class="card-ai">
+        <div class="card-header-ai">
+          <div class="section-title"><i class="bi bi-calendar-event" style="color:var(--c-primary);"></i> My Appointments</div>
+          <span class="badge-ai badge-primary">{{ appointments|length }}</span>
+        </div>
+        <div class="card-body-ai">
+          {% if appointments %}
+          <div style="display:flex;flex-direction:column;gap:0.75rem;" id="apptList">
+            {% for appt in appointments %}
+            <div class="card-ai" style="padding:1rem;{% if appt.status == 'cancelled' %}opacity:0.5;{% endif %}" id="appt-{{ appt.id }}">
+              <div class="flex-between gap-2">
+                <div>
+                  <div style="font-weight:600;font-size:0.9rem;">
+                    <i class="bi bi-person-lines-fill" style="color:var(--c-primary);font-size:0.9rem;"></i>
+                    {{ appt.doctor_name }}
+                  </div>
+                  <div class="text-muted-ai">{{ appt.specialty }}</div>
+                  {% if appt.location %}<div class="text-muted-ai"><i class="bi bi-geo-alt"></i> {{ appt.location }}</div>{% endif %}
+                  {% if appt.appointment_date %}
+                  <div class="font-mono mt-1" style="font-size:0.78rem;color:var(--c-primary);">
+                    <i class="bi bi-clock"></i> {{ appt.appointment_date.strftime('%b %d, %Y · %I:%M %p') }}
+                  </div>
+                  {% endif %}
+                  {% if appt.notes %}<div class="text-muted-ai mt-1" style="font-size:0.78rem;">{{ appt.notes[:60] }}</div>{% endif %}
+                </div>
+                <div class="d-flex flex-column align-items-end gap-2">
+                  <span class="badge-ai badge-{% if appt.status == 'scheduled' %}success{% elif appt.status == 'cancelled' %}danger{% else %}neutral{% endif %}">
+                    {{ appt.status|capitalize }}
+                  </span>
+                  {% if appt.status == 'scheduled' %}
+                  <button onclick="cancelAppt({{ appt.id }})" class="btn-ai btn-ghost-ai py-1 px-2" style="font-size:0.72rem;color:var(--c-danger);">
+                    <i class="bi bi-x-circle"></i> Cancel
+                  </button>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="text-center py-4 text-muted-ai">
+            <i class="bi bi-calendar-x" style="font-size:2.5rem;color:var(--c-text-4);"></i>
+            <p class="mt-2">No appointments booked yet.</p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Set min date to today
+const now = new Date();
+now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+document.getElementById('apptDate').min = now.toISOString().slice(0, 16);
+
+const specialtyTips = {
+  'Cardiologist': 'Based on any chest pain or heart-related symptoms, a cardiologist can assess cardiovascular risk.',
+  'Endocrinologist': 'If you have elevated blood sugar readings or thyroid concerns, an endocrinologist is the right choice.',
+  'Neurologist': 'For persistent headaches, dizziness, or neurological symptoms, a neurologist provides specialized care.',
+  'Gastroenterologist': 'For stomach pain, digestive issues, or abnormal liver enzymes, see a gastroenterologist.',
+  'General Physician': 'A general physician is the best first point of contact for any health concern.',
+  'Pulmonologist': 'For breathing difficulties, chronic cough, or respiratory conditions, a pulmonologist specializes in lung care.',
+};
+
+function aiRecommend() {
+  const spec = document.getElementById('apptSpecialty').value;
+  const tip = specialtyTips[spec];
+  const box = document.getElementById('aiSpecRec');
+  if (tip) {
+    document.getElementById('aiSpecText').innerHTML = `<strong>AI Insight:</strong> ${tip}`;
+    box.classList.remove('hidden');
+  } else {
+    box.classList.add('hidden');
+  }
+}
+
+async function bookAppointment() {
+  const specialty = document.getElementById('apptSpecialty').value;
+  const date = document.getElementById('apptDate').value;
+  if (!specialty) { showToast('Please select a specialty', 'danger'); return; }
+  if (!date) { showToast('Please select a date and time', 'danger'); return; }
+
+  const resp = await fetch('/api/appointments/book', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({
+      specialty,
+      doctor_name: document.getElementById('apptDoctor').value || 'Available Doctor',
+      location: document.getElementById('apptLocation').value,
+      appointment_date: date,
+      notes: document.getElementById('apptNotes').value
+    })
+  });
+  const data = await resp.json();
+  if (data.success) {
+    showToast('Appointment booked successfully!', 'success');
+    setTimeout(() => location.reload(), 900);
+  }
+}
+
+async function cancelAppt(id) {
+  if (!confirm('Cancel this appointment?')) return;
+  const resp = await fetch(`/api/appointments/${id}/cancel`, { method: 'POST' });
+  const data = await resp.json();
+  if (data.success) {
+    const el = document.getElementById('appt-'+id);
+    el.style.opacity = '0.5';
+    el.querySelector('.badge-ai').textContent = 'Cancelled';
+    el.querySelector('.badge-ai').className = 'badge-ai badge-danger';
+    el.querySelector('button')?.remove();
+    showToast('Appointment cancelled', 'info');
+  }
+}
+
+async function viewSummary() {
+  const preview = document.getElementById('summaryPreview');
+  preview.classList.remove('hidden');
+
+  const resp = await fetch('/api/health-summary');
+  const d = await resp.json();
+
+  const meds = d.active_medications?.map(m => `<li>${m.name} ${m.dosage} — ${m.frequency}</li>`).join('') || '<li>None</li>';
+  const symptoms = d.recent_symptoms?.map(s => `<li>${s.date}: ${s.symptoms} (Severity: ${s.severity}/10)</li>`).join('') || '<li>None logged</li>';
+
+  document.getElementById('summaryContent').innerHTML = `
+    <div style="border-bottom:1px solid var(--c-border);padding-bottom:0.75rem;margin-bottom:0.75rem;">
+      <div style="font-weight:700;font-size:0.9rem;color:var(--c-primary);margin-bottom:0.5rem;">
+        🏥 HealthAI Emergency Summary
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.35rem;">
+        <div><span class="text-muted-ai">Name:</span> <strong>${d.name || '—'}</strong></div>
+        <div><span class="text-muted-ai">Age:</span> <strong>${d.age || '—'}</strong></div>
+        <div><span class="text-muted-ai">Blood Group:</span> <strong>${d.blood_group || '—'}</strong></div>
+        <div><span class="text-muted-ai">BMI:</span> <strong>${d.bmi || '—'}</strong></div>
+      </div>
+    </div>
+    <div style="margin-bottom:0.5rem;"><strong>Allergies:</strong> ${d.allergies || 'None known'}</div>
+    <div style="margin-bottom:0.5rem;"><strong>Chronic Conditions:</strong> ${d.chronic_conditions || 'None'}</div>
+    <div style="margin-bottom:0.5rem;"><strong>Emergency Contact:</strong> ${d.emergency_contact || '—'} ${d.emergency_phone ? '(' + d.emergency_phone + ')' : ''}</div>
+    <div style="margin-bottom:0.35rem;"><strong>Active Medications:</strong><ul style="margin:0.25rem 0 0 1rem;padding:0;">${meds}</ul></div>
+    <div><strong>Recent Symptoms:</strong><ul style="margin:0.25rem 0 0 1rem;padding:0;">${symptoms}</ul></div>
+    <div style="margin-top:0.75rem;font-size:0.72rem;color:var(--c-text-4);">Generated by HealthAI · ${new Date().toLocaleString()}</div>
+  `;
+}
+
+async function copyShareLink() {
+  const resp = await fetch('/api/health-summary');
+  const d = await resp.json();
+
+  const text = `HealthAI Emergency Summary
+Name: ${d.name} | Age: ${d.age} | Blood: ${d.blood_group} | BMI: ${d.bmi}
+Allergies: ${d.allergies || 'None'} | Conditions: ${d.chronic_conditions || 'None'}
+Emergency Contact: ${d.emergency_contact} (${d.emergency_phone})
+Active Meds: ${d.active_medications?.map(m => m.name + ' ' + m.dosage).join(', ') || 'None'}
+Generated: ${new Date().toLocaleString()}`;
+
+  try {
+    await navigator.clipboard.writeText(text);
+    showToast('Health summary copied to clipboard!', 'success');
+  } catch(e) {
+    showToast('Copy failed — try manual copy', 'danger');
+  }
+}
+</script>
+{% endblock %}

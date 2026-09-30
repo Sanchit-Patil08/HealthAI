@@ -1,0 +1,476 @@
+{% extends "base.html" %} {% block title %}Medications{% endblock %} {% block content %}
+<div class="page-wrap">
+  <div class="page-header flex-between flex-wrap gap-3">
+    <div>
+      <h1 class="page-title"><i class="bi bi-capsule" style="color: var(--c-primary)"></i> Medication Manager</h1>
+      <p>Track your medications, log adherence, and get AI behavioral insights.</p>
+    </div>
+    <button onclick="openAddModal()" class="btn-ai btn-primary-ai"><i class="bi bi-plus-lg"></i> Add Medication</button>
+  </div>
+
+  <!-- Stats Row -->
+   
+<div class="grid-4 mb-4">
+  <div class="stat-tile">
+    <div class="stat-value">{{ active_meds|length }}</div>
+    <div class="stat-label">Active Meds</div>
+  </div>
+  <div class="stat-tile">
+    <div class="stat-value" style="color: var(--c-success)">{{ adherence_rate }}%</div>
+    <div class="stat-label">30-day Adherence</div>
+  </div>
+  <div class="stat-tile">
+    {% set taken_today = namespace(count=0) %}
+    {% for doses in logged_today.values() %}
+      {% for status in doses.values() %}
+        {% if status == 'taken' %}
+          {% set taken_today.count = taken_today.count + 1 %}
+        {% endif %}
+      {% endfor %}
+    {% endfor %}
+    <div class="stat-value" style="color: var(--c-accent)">
+      {{ taken_today.count }}/{{ active_meds|length }}
+    </div>
+    <div class="stat-label">Taken Today</div>
+  </div>
+  <div class="stat-tile">
+    {% set missed_today = namespace(count=0) %}
+    {% for doses in logged_today.values() %}
+      {% for status in doses.values() %}
+        {% if status == 'missed' %}
+          {% set missed_today.count = missed_today.count + 1 %}
+        {% endif %}
+      {% endfor %}
+    {% endfor %}
+    <div class="stat-value" style="color:{% if missed_today.count > 0 %}var(--c-danger){% else %}var(--c-success){% endif %};">
+      {{ missed_today.count }}
+    </div>
+    <div class="stat-label">Missed Today</div>
+  </div>
+</div>
+
+  <div class="row g-4">
+    <!-- Medications List -->
+    <div class="col-lg-7">
+      <!-- Adherence Alert -->
+      {% if adherence_rate < 70 and active_meds %}
+      <div class="alert-ai alert-ai-warning mb-4">
+        <i class="bi bi-exclamation-triangle-fill alert-icon"></i>
+        <div><strong>Low Adherence Alert</strong> — Your 30-day medication adherence is {{ adherence_rate }}%. Consistent medication intake is critical for treatment effectiveness.</div>
+      </div>
+      {% elif adherence_rate >= 90 and active_meds %}
+      <div class="alert-ai alert-ai-success mb-4">
+        <i class="bi bi-check-circle-fill alert-icon"></i>
+        <div><strong>Excellent Adherence!</strong> You're maintaining {{ adherence_rate }}% consistency. Keep it up!</div>
+      </div>
+      {% endif %}
+
+      <!-- Active Medications -->
+      <div class="card-ai mb-4">
+        <div class="card-header-ai">
+          <div class="section-title"><i class="bi bi-capsule-pill" style="color: var(--c-primary)"></i> Active Medications</div>
+          <span class="badge-ai badge-primary">{{ active_meds|length }} active</span>
+        </div>
+        <div class="card-body-ai">
+          {% if active_meds %}
+          <div style="display: flex; flex-direction: column; gap: 0.75rem" id="medList">
+            {% for med in active_meds %}
+                {% set doses = get_dose_labels(med) %}
+                    <div class="med-card" id="med-{{ med.id }}">
+                        <div class="med-icon">
+                            <i class="bi bi-capsule-pill"></i>
+                        </div>
+                    <div style="flex: 1">
+                    <div style="font-weight: 600; font-size: 0.9rem">{{ med.name }}</div>
+                    <div class="text-muted-ai">
+                        {{ med.dosage }} ·
+                        <span class="badge-ai badge-neutral" style="font-size: 0.68rem">{{ med.frequency }}</span>
+                    </div>
+                    {% if med.timing %}
+                    <div class="text-muted-ai" style="font-size: 0.75rem; margin-top: 2px">
+                        <i class="bi bi-clock" style="font-size: 0.7rem"></i> {{ med.timing }}
+                    </div>
+                    {% endif %}
+                    {% if med.notes %}
+                        <div class="text-muted-ai" style="font-size: 0.75rem; margin-top: 2px">{{ med.notes }}</div>
+                    {% endif %}
+
+                    <div style="display: flex; flex-direction: column; gap: 0.4rem; margin-top: 0.65rem;">
+                        {% for dose in doses %}
+                            {% set dose_status = logged_today.get(med.id, {}).get(dose) %}
+                            <div class="d-flex align-items-center justify-content-between">
+                                <span style="font-size: 0.78rem; font-weight: 500;">{{ dose }}</span>
+                                <div class="d-flex align-items-center gap-1">
+                                {% if dose_status == 'taken' %}
+                                    <span class="badge-ai badge-success"><i class="bi bi-check-lg"></i> Taken</span>
+                                {% elif dose_status == 'missed' %}
+                                    <span class="badge-ai badge-danger"><i class="bi bi-x-lg"></i> Missed</span>
+                                {% else %}
+                                    <button onclick="logMed({{ med.id }}, 'taken', '{{ dose }}')" class="btn-ai btn-success-ai py-1 px-2" style="font-size: 0.7rem">
+                                        <i class="bi bi-check"></i> Taken
+                                    </button>
+                                    <button onclick="logMed({{ med.id }}, 'missed', '{{ dose }}')" class="btn-ai btn-ghost-ai py-1 px-2" style="font-size: 0.7rem">
+                                        <i class="bi bi-x"></i>
+                                    </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <button onclick="deleteMed({{ med.id }})" class="btn-ai btn-ghost-ai py-1 px-2" style="font-size: 0.75rem; color: var(--c-text-4)">
+                <i class="bi bi-trash3"></i>
+            </button>
+        </div>
+        {% endfor %}
+          </div>
+          {% else %}
+          <div class="text-center py-5">
+            <i class="bi bi-capsule" style="font-size: 3rem; color: var(--c-text-4)"></i>
+            <h5 style="margin-top: 1rem; color: var(--c-text-3)">No Active Medications</h5>
+            <p class="text-muted-ai">Add your first medication to start tracking adherence.</p>
+            <button onclick="openAddModal()" class="btn-ai btn-primary-ai mt-2"><i class="bi bi-plus-lg"></i> Add Medication</button>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Inactive Medications -->
+      {% if inactive_meds %}
+      <div class="card-ai">
+        <div class="card-header-ai">
+          <div class="section-title"><i class="bi bi-archive" style="color: var(--c-text-3)"></i> Past Medications</div>
+          <span class="badge-ai badge-neutral">{{ inactive_meds|length }}</span>
+        </div>
+        <div class="card-body-ai">
+          <div style="display: flex; flex-direction: column; gap: 0.5rem">
+            {% for med in inactive_meds %}
+            <div style="padding: 0.75rem; background: var(--c-surface-2); border-radius: var(--radius-sm); opacity: 0.7;">
+              <div style="font-weight: 500; font-size: 0.875rem">{{ med.name }}</div>
+              <div class="text-muted-ai">{{ med.dosage }} · {{ med.frequency }}</div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Right: Insights + Chart -->
+    <div class="col-lg-5">
+      <!-- Weekly Chart -->
+      <div class="card-ai mb-4">
+        <div class="card-header-ai">
+          <div class="section-title"><i class="bi bi-bar-chart" style="color: var(--c-primary)"></i> 7-Day Adherence</div>
+        </div>
+        <div class="card-body-ai">
+          <canvas id="adherenceChart" height="130"></canvas>
+        </div>
+      </div>
+
+      <!-- Adherence Gauge -->
+      <div class="card-ai mb-4">
+        <div class="card-header-ai">
+          <div class="section-title"><i class="bi bi-speedometer2" style="color: var(--c-primary)"></i> 30-Day Adherence</div>
+        </div>
+        <div class="card-body-ai text-center">
+          <div style="font-family:var(--font-mono);font-size:3rem;font-weight:700;color:{% if adherence_rate >= 80 %}var(--c-success){% elif adherence_rate >= 60 %}var(--c-warning){% else %}var(--c-danger){% endif %};">{{ adherence_rate }}%</div>
+          <div class="progress-ai mt-2 mb-2">
+            <div class="progress-ai-fill fill-{% if adherence_rate >= 80 %}success{% elif adherence_rate >= 60 %}warning{% else %}danger{% endif %}" style="width:{{ adherence_rate }}%;"></div>
+          </div>
+          <div class="text-muted-ai" style="font-size: 0.82rem">
+            {% if adherence_rate >= 90 %}Excellent — keep it up! {% elif adherence_rate >= 80 %}Good adherence {% elif adherence_rate >= 70 %}Fair — try to improve {% elif adherence_rate >= 50 %}Below average — set reminders {% else %}Poor adherence — this is a health risk {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- AI Behavior Insights -->
+      <div class="card-ai">
+        <div class="card-header-ai">
+          <div class="section-title"><i class="bi bi-brain" style="color: var(--c-primary)"></i> AI Behavior Insights</div>
+          <span class="badge-ai badge-primary">AI</span>
+        </div>
+        <div class="card-body-ai" style="display: flex; flex-direction: column; gap: 0.75rem">
+          {% if adherence_rate >= 90 %}
+          <div class="alert-ai alert-ai-success" style="padding: 0.75rem">
+            <i class="bi bi-stars alert-icon" style="color: var(--c-success)"></i>
+            <div style="font-size: 0.82rem"><strong>Outstanding!</strong> Your adherence pattern shows strong commitment. The AI predicts continued health improvement.</div>
+          </div>
+          {% elif adherence_rate >= 70 %}
+          <div class="alert-ai alert-ai-info" style="padding: 0.75rem">
+            <i class="bi bi-lightbulb alert-icon" style="color: var(--c-info)"></i>
+            <div style="font-size: 0.82rem"><strong>Good pattern detected.</strong> Consider setting phone reminders for evening doses where patterns show most misses.</div>
+          </div>
+          {% else %}
+          <div class="alert-ai alert-ai-warning" style="padding: 0.75rem">
+            <i class="bi bi-exclamation-triangle alert-icon" style="color: var(--c-warning)"></i>
+            <div style="font-size: 0.82rem"><strong>Irregular pattern detected.</strong> Missing medications frequently can reduce treatment effectiveness by up to 50%.</div>
+          </div>
+          {% endif %}
+
+          <div style="padding: 0.875rem; background: var(--c-surface-2); border-radius: var(--radius-sm); font-size: 0.82rem; line-height: 1.6;">
+            <div style="font-weight: 600; margin-bottom: 0.25rem">💡 Tips to improve adherence:</div>
+            <ul style="padding-left: 1.25rem; margin: 0; color: var(--c-text-3)">
+              <li>Link medications to daily habits (morning coffee, dinner)</li>
+              <li>Use pill organizers for visual tracking</li>
+              <li>Set alarms at consistent times</li>
+              <li>Keep medications visible and accessible</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Medication Modal -->
+<div class="modal fade" id="addMedModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title fw-700"><i class="bi bi-capsule me-2" style="color: var(--c-primary)"></i>Add Medication</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="form-ai">
+          <div class="row g-3">
+            <div class="col-8">
+              <div class="field-group">
+                <label class="field-label">Medication Name *</label>
+                <input type="text" id="newMedName" class="input-ai" placeholder="e.g. Metformin 500mg" />
+              </div>
+            </div>
+            <div class="col-4">
+              <div class="field-group">
+                <label class="field-label">Dosage *</label>
+                <input type="text" id="newMedDosage" class="input-ai" placeholder="500mg" />
+              </div>
+            </div>
+          </div>
+          <div class="row g-3">
+            <div class="col-6">
+              <div class="field-group">
+                <label class="field-label">Frequency</label>
+                <select id="newMedFreq" class="select-ai">
+                  <option>Once daily</option>
+                  <option>Twice daily</option>
+                  <option>Three times daily</option>
+                  <option>Every 8 hours</option>
+                  <option>Weekly</option>
+                  <option>As needed</option>
+                </select>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="field-group">
+                <label class="field-label">Timing</label>
+                <select id="newMedTiming" class="select-ai"></select>
+              </div>
+            </div>
+          </div>
+          <div class="row g-3">
+            <div class="col-6">
+              <div class="field-group">
+                <label class="field-label">Start Date</label>
+                <input type="date" id="newMedStart" class="input-ai" />
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="field-group">
+                <label class="field-label">End Date</label>
+                <input type="date" id="newMedEnd" class="input-ai" />
+              </div>
+            </div>
+          </div>
+          <div class="field-group">
+            <label class="field-label">Notes</label>
+            <textarea id="newMedNotes" class="textarea-ai" rows="2" placeholder="Instructions, side effects to watch..."></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-ai btn-ghost-ai" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn-ai btn-primary-ai" onclick="addMedication()"><i class="bi bi-plus-lg"></i> Add Medication</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block scripts %}
+<script>
+  const weekData = {{week_data | safe}};
+
+  // Adherence Chart
+  const ctx = document.getElementById('adherenceChart');
+  if (ctx) {
+      new Chart(ctx, {
+          type: 'bar',
+          data: {
+              labels: weekData.map(d => d.date),
+              datasets: [{
+                  label: 'Taken',
+                  data: weekData.map(d => d.taken),
+                  backgroundColor: 'rgba(22,163,74,0.8)',
+                  borderRadius: 4
+              }, {
+                  label: 'Missed',
+                  data: weekData.map(d => d.missed),
+                  backgroundColor: 'rgba(220,38,38,0.6)',
+                  borderRadius: 4
+              }]
+          },
+          options: {
+              responsive: true,
+              plugins: {
+                  legend: {
+                      position: 'bottom',
+                      labels: {
+                          font: {
+                              family: 'DM Sans',
+                              size: 11
+                          }
+                      }
+                  }
+              },
+              scales: {
+                  x: {
+                      grid: {
+                          display: false
+                      },
+                      stacked: true
+                  },
+                  y: {
+                      grid: {
+                          color: 'rgba(0,0,0,0.04)'
+                      },
+                      stacked: true,
+                      ticks: {
+                          stepSize: 1
+                      }
+                  }
+              }
+          }
+      });
+  }
+
+  function openAddModal() {
+      new bootstrap.Modal(document.getElementById('addMedModal')).show();
+  }
+
+  const timingOptions = {
+      'Once daily': [
+          'Morning',
+          'Afternoon',
+          'Evening',
+          'Night',
+          'With Meals'
+      ],
+
+      'Twice daily': [
+          'Morning & Night',
+          'Morning & Evening',
+          'With Meals'
+      ],
+
+      'Three times daily': [
+          'Morning, Afternoon & Night',
+          'With Meals'
+      ],
+
+      'Every 8 hours': [
+          'Every 8 hours'
+      ],
+
+      'Weekly': [
+          'Once a week'
+      ],
+
+      'As needed': [
+          'As needed'
+      ]
+  };
+
+  function updateTimingOptions() {
+      const frequency = document.getElementById('newMedFreq').value;
+      const timing = document.getElementById('newMedTiming');
+
+      timing.innerHTML = '';
+
+      timingOptions[frequency].forEach(option => {
+          const optionElement = document.createElement('option');
+          optionElement.value = option;
+          optionElement.textContent = option;
+          timing.appendChild(optionElement);
+      });
+  }
+
+  document.getElementById('newMedFreq').addEventListener(
+      'change',
+      updateTimingOptions
+  );
+
+  updateTimingOptions();
+
+  async function addMedication() {
+      const name = document.getElementById('newMedName').value.trim();
+      const dosage = document.getElementById('newMedDosage').value.trim();
+      if (!name || !dosage) {
+          showToast('Name and dosage are required', 'danger');
+          return;
+      }
+
+      const resp = await fetch('/api/medications/add', {
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+              name,
+              dosage,
+              frequency: document.getElementById('newMedFreq').value,
+              timing: document.getElementById('newMedTiming').value,
+              notes: document.getElementById('newMedNotes').value,
+              start_date: document.getElementById('newMedStart').value,
+              end_date: document.getElementById('newMedEnd').value
+          })
+      });
+      const data = await resp.json();
+      if (data.success) {
+          bootstrap.Modal.getInstance(document.getElementById('addMedModal')).hide();
+          showToast(`${data.name} added successfully!`, 'success');
+          setTimeout(() => location.reload(), 800);
+      }
+  }
+
+  async function logMed(id, status, dose) {
+  const resp = await fetch(`/api/medications/${id}/log`, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      status,
+      dose
+    })
+  });
+
+  const data = await resp.json();
+
+  if (data.success) {
+    showToast(`${dose}: ${status === 'taken' ? 'Marked as taken' : 'Marked as missed'}`, status === 'taken' ? 'success' : 'warning');
+    setTimeout(() => location.reload(), 300);
+  } else {
+    showToast('Failed to log medication', 'danger');
+  }
+}
+
+  async function deleteMed(id) {
+      if (!confirm('Remove this medication from active list?')) return;
+      const resp = await fetch(`/api/medications/${id}/delete`, {
+          method: 'DELETE'
+      });
+      const data = await resp.json();
+      if (data.success) {
+          document.getElementById('med-' + id)?.remove();
+          showToast('Medication removed', 'info');
+      }
+  }
+</script>
+{% endblock %}

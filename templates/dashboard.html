@@ -1,0 +1,384 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-wrap">
+  <!-- Page Header -->
+  <div class="page-header flex-between flex-wrap gap-3">
+    <div>
+      <h1 class="page-title">
+        Good {% if current_user.name %}{{ current_user.name.split()[0] }}{% endif %} 👋
+      </h1>
+      <p>Here's your health intelligence overview for today.</p>
+    </div>
+    <div class="d-flex gap-2">
+      <span class="badge-ai badge-neutral font-mono">
+        <i class="bi bi-calendar3"></i>
+        {{ now.strftime('%b %d, %Y') if now else '' }}
+      </span>
+    </div>
+  </div>
+
+  <!-- Alerts Row -->
+  {% if alerts %}
+  <div class="mb-4" style="display:flex;flex-direction:column;gap:0.75rem;">
+    {% for alert in alerts %}
+    <div class="alert-ai alert-ai-{{ alert.type }}" id="alert-{{ loop.index }}">
+      <i class="bi bi-{{ alert.icon }} alert-icon" style="font-size:1.1rem;"></i>
+      <div class="flex-between w-100 flex-wrap gap-2">
+        <div>
+          <div style="font-weight:600;font-size:0.875rem;">{{ alert.title }}</div>
+          <div style="font-size:0.82rem;margin-top:1px;">{{ alert.message }}</div>
+        </div>
+        <div class="d-flex gap-2">
+          <a href="{{ url_for(alert.action + '.'+alert.action) if alert.action not in ['dashboard','emergency'] else ('#' if alert.action=='dashboard' else url_for('emergency.emergency')) }}"
+             class="btn-ai btn-ghost-ai py-1 px-2" style="font-size:0.75rem;">View →</a>
+          <button onclick="document.getElementById('alert-{{ loop.index }}').remove()"
+                  class="btn-ai btn-ghost-ai py-1 px-2" style="font-size:0.75rem;">
+            <i class="bi bi-x"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Top Stats Row -->
+  <div class="grid-4 mb-4">
+    <!-- Health Score -->
+    <div class="card-ai" style="grid-column: span 1;">
+      <div class="card-body-ai text-center">
+        <div class="score-ring-wrap">
+          <svg viewBox="0 0 120 120" width="120" height="120">
+            <circle class="score-ring-bg" cx="60" cy="60" r="50"/>
+            <circle class="score-ring-fill {% if score >= 70 %}good{% elif score >= 40 %}medium{% else %}low{% endif %}"
+              cx="60" cy="60" r="50"
+              stroke-dasharray="314"
+              stroke-dashoffset="{{ 314 - (314 * score / 100)|round|int }}"
+              id="scoreCircle"/>
+          </svg>
+          <div class="score-center">
+            <div class="score-number {% if score >= 70 %}text-success{% elif score >= 40 %}text-warning{% else %}text-danger{% endif %}"
+                 style="color:{% if score >= 70 %}var(--c-accent){% elif score >= 40 %}var(--c-warning){% else %}var(--c-danger){% endif %}">
+              {{ score|int }}
+            </div>
+            <div class="score-label">Health Score</div>
+          </div>
+        </div>
+        <div class="mt-2 text-muted-ai">
+          {% if score >= 75 %}Excellent{% elif score >= 60 %}Good{% elif score >= 45 %}Fair{% else %}Needs Attention{% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stat-tile">
+      <i class="bi bi-capsule" style="color:var(--c-primary);font-size:1.4rem;margin-bottom:0.5rem;display:block;"></i>
+      <div class="stat-value">{{ active_meds|length }}</div>
+      <div class="stat-label">Active Medications</div>
+      <div class="mt-2 text-muted-ai" style="font-size:0.75rem;">
+        {% set taken_count = logged_med_ids.values()|selectattr('__eq__','equalto','taken')|list|length %}
+        {{ taken_count }}/{{ active_meds|length }} logged today
+      </div>
+    </div>
+
+    <div class="stat-tile">
+      <i class="bi bi-file-earmark-medical" style="color:var(--c-accent);font-size:1.4rem;margin-bottom:0.5rem;display:block;"></i>
+      <div class="stat-value" style="color:var(--c-accent);">{{ recent_reports|length }}</div>
+      <div class="stat-label">Recent Reports</div>
+      <div class="mt-2 text-muted-ai" style="font-size:0.75rem;">Analyzed by AI</div>
+    </div>
+
+    <div class="stat-tile">
+      <i class="bi bi-calendar-check" style="color:var(--c-success);font-size:1.4rem;margin-bottom:0.5rem;display:block;"></i>
+      <div class="stat-value" style="color:var(--c-success);">{{ upcoming|length }}</div>
+      <div class="stat-label">Upcoming Appts.</div>
+      <div class="mt-2 text-muted-ai" style="font-size:0.75rem;">
+        {% if upcoming %}Next: {{ upcoming[0].appointment_date.strftime('%b %d') if upcoming[0].appointment_date }}{% else %}None scheduled{% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content Grid -->
+  <div class="row g-4">
+    <!-- Main Content Grid -->
+<div class="row g-4">
+    <!-- Left Column -->
+    <div class="col-lg-8">
+
+      <!-- Health Score Trend -->
+      <div class="card-ai mb-4">
+        <div class="card-header-ai">
+          <div class="section-title"><i class="bi bi-graph-up" style="color:var(--c-primary);"></i> Health Score Trend</div>
+          <span class="badge-ai badge-primary">Last 7 Records</span>
+        </div>
+        <div class="card-body-ai">
+          <canvas id="scoreChart" height="80"></canvas>
+        </div>
+      </div>
+
+      <!-- Health Factors -->
+      {% if factors %}
+      <div class="card-ai mb-4">
+        <div class="card-header-ai">
+          <div class="section-title"><i class="bi bi-sliders" style="color:var(--c-primary);"></i> Score Breakdown</div>
+        </div>
+        <div class="card-body-ai">
+          <div style="display:flex;flex-direction:column;gap:0.875rem;">
+            {% for f in factors %}
+            <div class="flex-between gap-2">
+              <div style="font-size:0.875rem;font-weight:500;">{{ f.label }}</div>
+              <div class="d-flex align-items-center gap-2">
+                <span class="font-mono" style="font-size:0.82rem;">{{ f.value }}</span>
+                <span class="badge-ai badge-{{ f.status }}">{{ f.status|capitalize }}</span>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Today's Medications -->
+<div class="card-ai mb-4">
+  <div class="card-header-ai">
+    <div class="section-title"><i class="bi bi-capsule" style="color:var(--c-primary);"></i> Today's Medications</div>
+    <a href="{{ url_for('medications.medications') }}" class="btn-ai btn-ghost-ai py-1 px-2" style="font-size:0.78rem;">
+      Manage All →
+    </a>
+  </div>
+  <div class="card-body-ai">
+    {% if active_meds %}
+    <div style="display:flex;flex-direction:column;gap:0.75rem;">
+      {% for med in active_meds[:6] %}
+      {% set doses = get_dose_labels(med) %}
+      {% for dose in doses %}
+      {% set status = logged_med_ids.get(med.id, {}).get(dose) %}
+      <div class="med-card {{ status or '' }}">
+        <div class="med-icon">
+          <i class="bi bi-capsule-pill"></i>
+        </div>
+        <div style="flex:1;">
+          <div style="font-weight:600;font-size:0.9rem;">{{ med.name }}</div>
+          <div class="text-muted-ai">{{ med.dosage }} · {{ dose }}</div>
+        </div>
+        {% if status == 'taken' %}
+        <span class="badge-ai badge-success"><i class="bi bi-check"></i> Taken</span>
+        {% elif status == 'missed' %}
+        <span class="badge-ai badge-danger"><i class="bi bi-x"></i> Missed</span>
+        {% else %}
+        <div class="d-flex gap-1">
+          <button onclick="quickLog({{ med.id }}, 'taken', this, '{{ dose }}')" class="btn-ai btn-success-ai py-1 px-2" style="font-size:0.75rem;">
+            <i class="bi bi-check"></i> Taken
+          </button>
+          <button onclick="quickLog({{ med.id }}, 'missed', this, '{{ dose }}')" class="btn-ai btn-ghost-ai py-1 px-2" style="font-size:0.75rem;">
+            <i class="bi bi-x"></i>
+          </button>
+        </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-4">
+      <i class="bi bi-capsule" style="font-size:2rem;color:var(--c-text-4);"></i>
+      <p class="text-muted-ai mt-2">No active medications</p>
+      <a href="{{ url_for('medications.medications') }}" class="btn-ai btn-outline-ai mt-2" style="font-size:0.82rem;">
+        Add Medication
+      </a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+</div>
+
+    <!-- Right Column -->
+    <div class="col-lg-4">
+
+  <!-- HealthAI Insights -->
+  <div class="card-ai mb-4">
+    <div class="card-header-ai">
+      <div class="section-title">
+        <i class="bi bi-stars" style="color:var(--c-primary);"></i>
+        HealthAI Insights
+      </div>
+      <span class="badge-ai badge-primary">Live</span>
+    </div>
+
+    <div class="card-body-ai">
+      {% if health_insights %}
+      <div style="display:flex;flex-direction:column;gap:0.75rem;">
+        {% for insight in health_insights %}
+        <div class="alert-ai alert-ai-{{ insight.type }}" style="padding:0.75rem;">
+          <i class="bi bi-{{ insight.icon }} alert-icon"></i>
+          <div>
+            <div style="font-weight:600;font-size:0.8rem;">
+              {{ insight.title }}
+            </div>
+            <div style="font-size:0.78rem;margin-top:2px;line-height:1.5;">
+              {{ insight.message }}
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="text-center py-2 text-muted-ai">
+        <i class="bi bi-bar-chart-line" style="font-size:1.5rem;"></i>
+        <p class="mt-2 mb-0" style="font-size:0.82rem;">
+          Keep logging your health activity to build personalized insights.
+        </p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+      <!-- Recent Symptoms Timeline -->
+      <div class="card-ai mb-4">
+        <div class="card-header-ai">
+          <div class="section-title"><i class="bi bi-clock-history" style="color:var(--c-primary);"></i> Recent Symptoms</div>
+          <a href="{{ url_for('health_check.health_check') }}" class="btn-ai btn-ghost-ai py-1 px-2" style="font-size:0.78rem;">View All →</a>
+        </div>
+        <div class="card-body-ai">
+          {% if recent_symptoms %}
+          <div class="timeline">
+            {% for s in recent_symptoms %}
+            <div class="timeline-item">
+              <div class="timeline-dot symptom"></div>
+              <div class="timeline-date">{{ s.logged_at.strftime('%b %d, %I:%M %p') }}</div>
+              <div class="timeline-content mt-1">
+                <span style="font-weight:500;">{{ s.symptoms[:60] }}{% if s.symptoms|length > 60 %}...{% endif %}</span>
+                {% if s.urgency_level %}
+                <span class="badge-ai badge-{% if s.urgency_level == 'emergency' %}danger{% elif s.urgency_level == 'high' %}warning{% else %}neutral{% endif %} ms-1" style="font-size:0.65rem;">
+                  {{ s.urgency_level }}
+                </span>
+                {% endif %}
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="text-center py-3 text-muted-ai">
+            <i class="bi bi-clipboard-pulse" style="font-size:1.5rem;"></i>
+            <p class="mt-1" style="font-size:0.82rem;">No symptoms logged yet</p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="card-ai mb-4">
+        <div class="card-header-ai">
+          <div class="section-title"><i class="bi bi-lightning-fill" style="color:var(--c-primary);"></i> Quick Actions</div>
+        </div>
+        <div class="card-body-ai" style="display:flex;flex-direction:column;gap:0.625rem;">
+          <a href="{{ url_for('health_check.health_check') }}" class="btn-ai btn-outline-ai justify-content-start">
+            <i class="bi bi-stethoscope"></i> Check Symptoms
+          </a>
+          <a href="{{ url_for('health_check.health_check') }}#report" class="btn-ai btn-outline-ai justify-content-start">
+            <i class="bi bi-file-earmark-plus"></i> Analyze Report
+          </a>
+          <a href="{{ url_for('medications.medications') }}" class="btn-ai btn-outline-ai justify-content-start">
+            <i class="bi bi-plus-circle"></i> Add Medication
+          </a>
+          <a href="{{ url_for('emergency.emergency') }}" class="btn-ai btn-outline-ai justify-content-start">
+            <i class="bi bi-calendar-plus"></i> Book Appointment
+          </a>
+          <a href="{{ url_for('emergency.emergency') }}" class="btn-ai btn-danger-ai justify-content-start mt-1">
+            <i class="bi bi-telephone-fill"></i> Emergency SOS
+          </a>
+        </div>
+      </div>
+
+      <!-- Upcoming Appointments -->
+
+      {% if upcoming %}
+      <div class="card-ai mb-4">
+        <div class="card-header-ai">
+          <div class="section-title"><i class="bi bi-calendar-event" style="color:var(--c-primary);"></i> Upcoming</div>
+        </div>
+        <div class="card-body-ai" style="display:flex;flex-direction:column;gap:0.75rem;">
+          {% for appt in upcoming %}
+          <div style="padding:0.75rem;background:var(--c-surface-2);border-radius:var(--radius-sm);">
+            <div style="font-weight:600;font-size:0.875rem;">{{ appt.doctor_name }}</div>
+            <div class="text-muted-ai">{{ appt.specialty }}</div>
+            {% if appt.appointment_date %}
+            <div class="font-mono mt-1" style="font-size:0.78rem;color:var(--c-primary);">
+              {{ appt.appointment_date.strftime('%b %d · %I:%M %p') }}
+            </div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Health Score Chart
+const scoreData = {{ score_history | tojson }};
+const labels = scoreData.map((_, i) => i === scoreData.length-1 ? 'Now' : `-${scoreData.length-1-i}`);
+const scores = scoreData.map(s => s.score);
+
+const ctx = document.getElementById('scoreChart');
+if (ctx && scores.length > 0) {
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Health Score',
+        data: scores,
+        borderColor: 'var(--c-primary)',
+        backgroundColor: 'rgba(26,92,255,0.06)',
+        fill: true,
+        tension: 0.4,
+        pointBackgroundColor: 'var(--c-primary)',
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        borderWidth: 2.5
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: {
+          min: 0, max: 100,
+          grid: { color: 'rgba(0,0,0,0.04)' },
+          ticks: { font: { family: 'DM Mono', size: 11 } }
+        },
+        x: {
+          grid: { display: false },
+          ticks: { font: { family: 'DM Mono', size: 11 } }
+        }
+      }
+    }
+  });
+}
+
+// Quick medication log
+async function quickLog(medId, status, btn) {
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+  try {
+    const resp = await fetch(`/api/medications/${medId}/log`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({status})
+    });
+    const data = await resp.json();
+    if (data.success) {
+      location.reload();
+    }
+  } catch(e) { btn.disabled = false; }
+}
+</script>
+{% endblock %}

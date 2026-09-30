@@ -1,0 +1,451 @@
+{% extends "base.html" %}
+{% block title %}Profile & Settings{% endblock %}
+
+{% block content %}
+<div class="page-wrap">
+  <div class="page-header flex-between flex-wrap gap-3">
+    <div>
+      <h1 class="page-title"><i class="bi bi-person-circle" style="color:var(--c-primary);"></i> Profile & Settings</h1>
+      <p>Your personal health profile, preferences, and document vault.</p>
+    </div>
+    <div class="user-avatar" style="width:52px;height:52px;font-size:1.1rem;">
+      {{ current_user.name[:2].upper() }}
+    </div>
+  </div>
+
+  {% with messages = get_flashed_messages(with_categories=True) %}
+    {% for cat, msg in messages %}
+    <div class="alert-ai alert-ai-{{ cat }} mb-4">
+      <i class="bi bi-{% if cat == 'success' %}check-circle{% else %}info-circle{% endif %} alert-icon"></i> {{ msg }}
+    </div>
+    {% endfor %}
+  {% endwith %}
+
+  <!-- Profile tabs -->
+  <div class="tabs-ai mb-4" style="max-width:600px;">
+    <button class="tab-btn active" onclick="switchTab('personal', this)">
+      <i class="bi bi-person"></i> Personal Info
+    </button>
+    <button class="tab-btn" onclick="switchTab('health', this)">
+      <i class="bi bi-heart-pulse"></i> Health Details
+    </button>
+    <button class="tab-btn" onclick="switchTab('emergency', this)">
+      <i class="bi bi-telephone-fill"></i> Emergency
+    </button>
+    <button class="tab-btn" onclick="switchTab('documents', this)">
+      <i class="bi bi-folder2-open"></i> Documents
+    </button>
+  </div>
+
+  <form method="POST">
+  <div class="row g-4">
+    <div class="col-lg-8">
+
+      <!-- Personal Info Tab -->
+      <div id="tab-personal" class="card-ai mb-4">
+        <div class="card-header-ai">
+          <div class="section-title"><i class="bi bi-person" style="color:var(--c-primary);"></i> Personal Information</div>
+        </div>
+        <div class="card-body-ai">
+          <div class="form-ai">
+            <div class="row g-3">
+              <div class="col-8">
+                <div class="field-group">
+                  <label class="field-label">Full Name</label>
+                  <input type="text" name="name" class="input-ai" value="{{ current_user.name }}" required>
+                </div>
+              </div>
+              <div class="col-4">
+                <div class="field-group">
+                  <label class="field-label">Age</label>
+                  <input type="number" name="age" class="input-ai" value="{{ current_user.age or '' }}" min="1" max="120">
+                </div>
+              </div>
+            </div>
+            <div class="row g-3">
+              <div class="col-6">
+                <div class="field-group">
+                  <label class="field-label">Gender</label>
+                  <select name="gender" class="select-ai">
+                    <option value="">— Select —</option>
+                    <option {% if current_user.gender == 'Male' %}selected{% endif %}>Male</option>
+                    <option {% if current_user.gender == 'Female' %}selected{% endif %}>Female</option>
+                    <option {% if current_user.gender == 'Non-binary' %}selected{% endif %}>Non-binary</option>
+                    <option {% if current_user.gender == 'Prefer not to say' %}selected{% endif %}>Prefer not to say</option>
+                  </select>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="field-group">
+                  <label class="field-label">Blood Group</label>
+                  <select name="blood_group" class="select-ai">
+                    <option value="">— Select —</option>
+                    {% for bg in ['A+','A-','B+','B-','AB+','AB-','O+','O-'] %}
+                    <option {% if current_user.blood_group == bg %}selected{% endif %}>{{ bg }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div class="row g-3">
+              <div class="col-6">
+                <div class="field-group">
+                  <label class="field-label">Height (cm)</label>
+                  <input type="number" name="height" class="input-ai" value="{{ current_user.height or '' }}" step="0.1" placeholder="e.g. 170">
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="field-group">
+                  <label class="field-label">Weight (kg)</label>
+                  <input type="number" name="weight" class="input-ai" value="{{ current_user.weight or '' }}" step="0.1" placeholder="e.g. 70">
+                </div>
+              </div>
+            </div>
+            <!-- BMI Display -->
+            {% if current_user.bmi %}
+            <div style="background:var(--c-surface-2);border-radius:var(--radius-sm);padding:1rem;display:flex;align-items:center;gap:1rem;">
+              <div style="text-align:center;min-width:80px;">
+                <div style="font-family:var(--font-mono);font-size:1.8rem;font-weight:700;color:{% if 18.5 <= current_user.bmi <= 24.9 %}var(--c-success){% elif current_user.bmi < 18.5 %}var(--c-info){% elif current_user.bmi <= 29.9 %}var(--c-warning){% else %}var(--c-danger){% endif %};">
+                  {{ current_user.bmi }}
+                </div>
+                <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--c-text-4);">BMI</div>
+              </div>
+              <div>
+                <div style="font-weight:600;">
+                  {% if current_user.bmi < 18.5 %}Underweight
+                  {% elif current_user.bmi <= 24.9 %}Normal Weight ✓
+                  {% elif current_user.bmi <= 29.9 %}Overweight
+                  {% else %}Obese{% endif %}
+                </div>
+                <div style="font-size:0.8rem;color:var(--c-text-3);">
+                  Healthy range: 18.5 – 24.9
+                </div>
+              </div>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Health Details Tab -->
+      <div id="tab-health" class="card-ai mb-4 hidden">
+        <div class="card-header-ai">
+          <div class="section-title"><i class="bi bi-heart-pulse" style="color:var(--c-primary);"></i> Health Details</div>
+        </div>
+        <div class="card-body-ai">
+          <div class="form-ai">
+            <div class="field-group">
+              <label class="field-label">Known Allergies</label>
+              <textarea name="allergies" class="textarea-ai" rows="3"
+                placeholder="e.g. Penicillin, Peanuts, Latex...">{{ current_user.allergies or '' }}</textarea>
+              <div class="text-muted-ai mt-1" style="font-size:0.75rem;">
+                <i class="bi bi-info-circle"></i> This info is shared in emergency summaries
+              </div>
+            </div>
+            <div class="field-group">
+              <label class="field-label">Chronic Conditions / Diagnoses</label>
+              <textarea name="chronic_conditions" class="textarea-ai" rows="3"
+                placeholder="e.g. Type 2 Diabetes, Hypertension, Asthma...">{{ current_user.chronic_conditions or '' }}</textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Emergency Tab -->
+      <div id="tab-emergency" class="card-ai mb-4 hidden">
+        <div class="card-header-ai">
+          <div class="section-title"><i class="bi bi-telephone-fill" style="color:var(--c-primary);"></i> Emergency Contacts</div>
+        </div>
+        <div class="card-body-ai">
+          <div class="form-ai">
+            <div class="row g-3">
+              <div class="col-6">
+                <div class="field-group">
+                  <label class="field-label">Emergency Contact Name</label>
+                  <input type="text" name="emergency_contact" class="input-ai"
+                    value="{{ current_user.emergency_contact or '' }}" placeholder="Family member / Friend">
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="field-group">
+                  <label class="field-label">Emergency Phone Number</label>
+                  <input type="tel" name="emergency_phone" class="input-ai"
+                    value="{{ current_user.emergency_phone or '' }}" placeholder="+91 XXXXXXXXXX">
+                </div>
+              </div>
+            </div>
+            <div class="field-group">
+              <label class="field-label">Caregiver / Doctor Email</label>
+              <input type="email" name="caregiver_email" class="input-ai"
+                value="{{ current_user.caregiver_email or '' }}" placeholder="doctor@hospital.com">
+              <div class="text-muted-ai mt-1" style="font-size:0.75rem;">Health summaries can be shared to this email</div>
+            </div>
+            <div style="background:var(--c-danger-light);border-radius:var(--radius-sm);padding:0.875rem;font-size:0.82rem;color:var(--c-danger);">
+              <i class="bi bi-shield-fill-exclamation"></i>
+              <strong>Important:</strong> Keep emergency contact info up to date. In a medical emergency, this info is shared automatically with responders via your health summary.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Save Button (shown for personal, health, emergency tabs) -->
+      <div id="saveSection">
+        <button type="submit" class="btn-ai btn-primary-ai" style="font-size:0.95rem;padding:0.7rem 2rem;">
+          <i class="bi bi-check-circle-fill"></i> Save Changes
+        </button>
+        <span class="text-muted-ai ms-3" style="font-size:0.8rem;">Changes are saved immediately</span>
+      </div>
+
+      <!-- Documents Tab -->
+      <div id="tab-documents" class="hidden">
+        <div class="card-ai mb-4">
+          <div class="card-header-ai">
+            <div class="section-title"><i class="bi bi-folder2-open" style="color:var(--c-primary);"></i> Health Document Vault</div>
+            <button type="button" onclick="openDocModal()" class="btn-ai btn-primary-ai py-1 px-3" style="font-size:0.8rem;">
+              <i class="bi bi-cloud-upload"></i> Upload
+            </button>
+          </div>
+          <div class="card-body-ai">
+            <p style="font-size:0.875rem;color:var(--c-text-3);margin-bottom:1.25rem;">
+              Store all your health-related documents in one secure place — prescriptions, test results, discharge summaries, insurance cards, and more.
+            </p>
+            {% if documents %}
+            <div style="display:flex;flex-direction:column;gap:0.75rem;" id="docList">
+              {% for doc in documents %}
+              <div class="card-ai" style="padding:0.875rem 1rem;" id="doc-{{ doc.id }}">
+                <div class="flex-between gap-3">
+                  <div style="display:flex;align-items:center;gap:0.875rem;">
+                    <div style="width:40px;height:40px;background:var(--c-primary-light);color:var(--c-primary);border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0;">
+                      <i class="bi bi-{% if doc.original_name.endswith('.pdf') %}file-pdf{% elif doc.original_name.endswith(('.jpg','.jpeg','.png')) %}file-image{% else %}file-earmark-text{% endif %}"></i>
+                    </div>
+                    <div>
+                      <div style="font-weight:600;font-size:0.875rem;">{{ doc.original_name }}</div>
+                      <div style="display:flex;gap:0.5rem;align-items:center;margin-top:2px;">
+                        <span class="badge-ai badge-primary" style="font-size:0.65rem;">{{ doc.doc_type }}</span>
+                        <span class="text-muted-ai" style="font-size:0.75rem;">
+                          {{ doc.uploaded_at.strftime('%b %d, %Y') }}
+                        </span>
+                      </div>
+                      {% if doc.notes %}<div class="text-muted-ai" style="font-size:0.75rem;margin-top:2px;">{{ doc.notes }}</div>{% endif %}
+                    </div>
+                  </div>
+                  <button type="button" onclick="deleteDoc({{ doc.id }})" class="btn-ai btn-ghost-ai py-1 px-2" style="font-size:0.75rem;color:var(--c-danger);">
+                    <i class="bi bi-trash3"></i>
+                  </button>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-5" id="emptyDocs">
+              <i class="bi bi-folder-x" style="font-size:3rem;color:var(--c-text-4);"></i>
+              <h5 style="margin-top:1rem;color:var(--c-text-3);">No Documents Yet</h5>
+              <p class="text-muted-ai">Upload prescriptions, reports, and health records to keep everything in one place.</p>
+              <button type="button" onclick="openDocModal()" class="btn-ai btn-primary-ai mt-2">
+                <i class="bi bi-cloud-upload"></i> Upload First Document
+              </button>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Right sidebar: Account info -->
+    <div class="col-lg-4">
+      <div class="card-ai mb-4">
+        <div class="card-header-ai">
+          <div class="section-title">Account</div>
+        </div>
+        <div class="card-body-ai">
+          <div style="text-align:center;padding:1rem 0;">
+            <div class="user-avatar mx-auto mb-3" style="width:64px;height:64px;font-size:1.4rem;">
+              {{ current_user.name[:2].upper() }}
+            </div>
+            <div style="font-weight:700;font-size:1.05rem;">{{ current_user.name }}</div>
+            <div class="text-muted-ai" style="font-size:0.82rem;">{{ current_user.email }}</div>
+            <div class="text-muted-ai mt-1" style="font-size:0.75rem;">
+              Member since {{ current_user.created_at.strftime('%B %Y') if current_user.created_at }}
+            </div>
+          </div>
+          <div class="divider"></div>
+          <div style="display:flex;flex-direction:column;gap:0.625rem;font-size:0.85rem;">
+            <div class="flex-between">
+              <span class="text-muted-ai">Blood Group</span>
+              <span class="fw-600">{{ current_user.blood_group or '—' }}</span>
+            </div>
+            <div class="flex-between">
+              <span class="text-muted-ai">BMI</span>
+              <span class="fw-600">{{ current_user.bmi or '—' }}</span>
+            </div>
+            <div class="flex-between">
+              <span class="text-muted-ai">Age</span>
+              <span class="fw-600">{{ current_user.age or '—' }}</span>
+            </div>
+            <div class="flex-between">
+              <span class="text-muted-ai">Gender</span>
+              <span class="fw-600">{{ current_user.gender or '—' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Profile Completion -->
+      <div class="card-ai mb-4">
+        <div class="card-header-ai">
+          <div class="section-title">Profile Completion</div>
+        </div>
+        <div class="card-body-ai">
+          {% set fields = [current_user.age, current_user.gender, current_user.blood_group, current_user.height, current_user.weight, current_user.allergies, current_user.emergency_contact, current_user.emergency_phone] %}
+          {% set filled = fields|select|list|length %}
+          {% set pct = (filled / 8 * 100)|round|int %}
+          <div class="flex-between mb-2">
+            <span style="font-size:0.82rem;font-weight:500;">{{ filled }}/8 fields complete</span>
+            <span class="font-mono fw-700" style="color:{% if pct >= 80 %}var(--c-success){% elif pct >= 50 %}var(--c-warning){% else %}var(--c-danger){% endif %};">{{ pct }}%</span>
+          </div>
+          <div class="progress-ai">
+            <div class="progress-ai-fill fill-{% if pct >= 80 %}success{% elif pct >= 50 %}warning{% else %}danger{% endif %}"
+                 style="width:{{ pct }}%;"></div>
+          </div>
+          <div class="text-muted-ai mt-2" style="font-size:0.75rem;">
+            {% if pct < 100 %}Complete your profile for better AI insights and accurate health scoring.{% else %}Profile is fully complete!{% endif %}
+          </div>
+          <!-- Missing fields hints -->
+          <div class="mt-2" style="display:flex;flex-direction:column;gap:0.35rem;">
+            {% if not current_user.blood_group %}<div style="font-size:0.75rem;color:var(--c-danger);"><i class="bi bi-x-circle"></i> Blood Group missing</div>{% endif %}
+            {% if not current_user.height or not current_user.weight %}<div style="font-size:0.75rem;color:var(--c-warning);"><i class="bi bi-exclamation-circle"></i> Height/Weight needed for BMI</div>{% endif %}
+            {% if not current_user.emergency_contact %}<div style="font-size:0.75rem;color:var(--c-warning);"><i class="bi bi-exclamation-circle"></i> Emergency contact missing</div>{% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Danger Zone -->
+      <div class="card-ai" style="border-color:var(--c-danger-light);">
+        <div class="card-header-ai">
+          <div class="section-title" style="color:var(--c-danger);">Account Actions</div>
+        </div>
+        <div class="card-body-ai" style="display:flex;flex-direction:column;gap:0.625rem;">
+          <a href="{{ url_for('auth.logout') }}" class="btn-ai btn-ghost-ai justify-content-start">
+            <i class="bi bi-box-arrow-right"></i> Sign Out
+          </a>
+          <button type="button" class="btn-ai btn-ghost-ai justify-content-start" style="color:var(--c-danger);"
+            onclick="if(confirm('This will permanently delete your account and all data. Continue?')) alert('Feature disabled in demo')">
+            <i class="bi bi-trash3"></i> Delete Account
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  </form>
+</div>
+
+<!-- Upload Document Modal -->
+<div class="modal fade" id="docModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title fw-700"><i class="bi bi-cloud-upload me-2" style="color:var(--c-primary);"></i>Upload Document</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="form-ai">
+          <div class="field-group">
+            <label class="field-label">Document Type</label>
+            <select id="docType" class="select-ai">
+              <option>Prescription</option>
+              <option>Blood Test Report</option>
+              <option>Imaging / X-Ray</option>
+              <option>Discharge Summary</option>
+              <option>Insurance Card</option>
+              <option>Vaccination Record</option>
+              <option>Eye / Dental Report</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label class="field-label">File *</label>
+            <div onclick="document.getElementById('docFile').click()"
+              style="border:2px dashed var(--c-border);border-radius:var(--radius-sm);padding:1.5rem;text-align:center;cursor:pointer;background:var(--c-surface-2);">
+              <i class="bi bi-file-earmark-arrow-up" style="font-size:1.75rem;color:var(--c-primary);"></i>
+              <div id="docFileName" style="margin-top:0.5rem;font-size:0.875rem;font-weight:500;">Click to choose file</div>
+              <div style="font-size:0.75rem;color:var(--c-text-4);">PDF, JPG, PNG up to 16MB</div>
+            </div>
+            <input type="file" id="docFile" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" hidden
+              onchange="document.getElementById('docFileName').textContent = this.files[0]?.name || 'Click to choose file'">
+          </div>
+          <div class="field-group">
+            <label class="field-label">Notes <span style="color:var(--c-text-4);font-size:0.7rem;">(optional)</span></label>
+            <textarea id="docNotes" class="textarea-ai" rows="2" placeholder="Add notes about this document..."></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-ai btn-ghost-ai" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn-ai btn-primary-ai" onclick="uploadDocument()">
+          <i class="bi bi-cloud-arrow-up-fill"></i> Upload Document
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function switchTab(tab, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-personal').classList.toggle('hidden', tab !== 'personal');
+  document.getElementById('tab-health').classList.toggle('hidden', tab !== 'health');
+  document.getElementById('tab-emergency').classList.toggle('hidden', tab !== 'emergency');
+  document.getElementById('tab-documents').classList.toggle('hidden', tab !== 'documents');
+  document.getElementById('saveSection').classList.toggle('hidden', tab === 'documents');
+}
+
+function openDocModal() {
+  new bootstrap.Modal(document.getElementById('docModal')).show();
+}
+
+async function uploadDocument() {
+  const file = document.getElementById('docFile').files[0];
+  if (!file) { showToast('Please select a file', 'danger'); return; }
+  
+  const form = new FormData();
+  form.append('document', file);
+  form.append('doc_type', document.getElementById('docType').value);
+  form.append('notes', document.getElementById('docNotes').value);
+  
+  const btn = event.target;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Uploading...';
+  btn.disabled = true;
+  
+  try {
+    const resp = await fetch('/api/documents/upload', { method: 'POST', body: form });
+    const data = await resp.json();
+    if (data.success) {
+      bootstrap.Modal.getInstance(document.getElementById('docModal')).hide();
+      showToast('Document uploaded!', 'success');
+      setTimeout(() => location.reload(), 700);
+    } else {
+      showToast(data.error || 'Upload failed', 'danger');
+    }
+  } catch(e) {
+    showToast('Upload error', 'danger');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-cloud-arrow-up-fill"></i> Upload Document';
+  }
+}
+
+async function deleteDoc(id) {
+  if (!confirm('Delete this document permanently?')) return;
+  const resp = await fetch(`/api/documents/${id}/delete`, { method: 'DELETE' });
+  const data = await resp.json();
+  if (data.success) {
+    document.getElementById('doc-'+id)?.remove();
+    showToast('Document deleted', 'info');
+  }
+}
+</script>
+{% endblock %}

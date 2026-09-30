@@ -1,0 +1,38 @@
+# Environment & secrets
+.env
+.env.*
+
+# Virtual environment
+venv/
+.venv/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.class
+
+# Flask / local instance data
+instance/
+
+# User-uploaded files
+uploads/
+
+# Test / local artifacts
+test_*.pdf
+test_*.txt
+test_*.py
+tp.py
+sample.pdf
+
+# IDE / editor
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Local databases
+*.db
+*.sqlite
+*.sqlite3
