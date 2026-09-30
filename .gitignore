@@ -36,3 +36,5 @@ Thumbs.db
 *.db
 *.sqlite
 *.sqlite3
+
+readme(new).md
